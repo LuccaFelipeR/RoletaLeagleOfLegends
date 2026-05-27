@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roleta do Rift</title>
+  <style>
+    :root {
+      --bg: #050814;
+      --bg-2: #09111f;
+      --card: rgba(10, 20, 38, 0.78);
+      --card-2: rgba(14, 30, 55, 0.9);
+      --gold: #c8aa6e;
+      --gold-2: #f0d38a;
+      --blue: #0ac8b9;
+      --blue-2: #0397ab;
+      --text: #f5f1e6;
+      --muted: #a8b2c1;
+      --danger: #ff6b6b;
+      --ok: #7cf7c4;
+      --shadow: 0 18px 70px rgba(0, 0, 0, 0.42);
+      --border: rgba(200, 170, 110, 0.24);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(10, 200, 185, 0.20), transparent 28%),
+        radial-gradient(circle at 85% 4%, rgba(200, 170, 110, 0.18), transparent 30%),
+        linear-gradient(145deg, var(--bg), #071121 52%, #02040a);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(circle at center, black, transparent 72%);
+      z-index: -1;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 48px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1.4fr 0.6fr;
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .hero {
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      background: linear-gradient(135deg, rgba(14, 30, 55, 0.82), rgba(6, 10, 24, 0.72));
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -70px;
+      top: -100px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,170,110,0.28), transparent 66%);
+      filter: blur(1px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid rgba(10, 200, 185, 0.35);
+      border-radius: 999px;
+      color: var(--blue);
+      background: rgba(10, 200, 185, 0.08);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 14px 0 8px;
+      font-size: clamp(36px, 7vw, 72px);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      text-shadow: 0 0 28px rgba(200, 170, 110, 0.16);
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 670px;
+      color: var(--muted);
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.5;
+    }
+
+    .status-card {
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      background: rgba(5, 8, 20, 0.58);
+      box-shadow: var(--shadow);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-row:last-child { border-bottom: 0; }
+    .status-row strong { color: var(--text); text-align: right; }
+
+    .panel {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .controls, .result, .history {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .controls { padding: 22px; position: sticky; top: 18px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .section-title h2, .section-title h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .pill {
+      font-size: 12px;
+      color: var(--gold-2);
+      border: 1px solid rgba(200,170,110,0.32);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(200,170,110,0.08);
+      white-space: nowrap;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin: 14px 0 8px;
+    }
+
+    select, button {
+      width: 100%;
+      font: inherit;
+    }
+
+    select {
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.26);
+      padding: 12px 12px;
+      border-radius: 14px;
+      outline: none;
+    }
+
+    select:focus { border-color: rgba(10, 200, 185, 0.62); box-shadow: 0 0 0 3px rgba(10,200,185,0.12); }
+
+    .lock-grid {
+      display: grid;
+      gap: 10px;
+      margin: 16px 0 18px;
+    }
+
+    .checkline {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.035);
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkline input { accent-color: var(--gold); width: 18px; height: 18px; }
+    .checkline span { font-size: 14px; }
+
+    .btn {
+      border: 0;
+      color: #07111f;
+      font-weight: 900;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      border-radius: 17px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, opacity 0.16s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+    .btn:active { transform: translateY(1px) scale(0.99); }
+    .btn:disabled { opacity: 0.48; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      min-height: 64px;
+      font-size: 20px;
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
+      box-shadow: 0 12px 36px rgba(200,170,110,0.24), inset 0 1px 0 rgba(255,255,255,0.45);
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(10,200,185,0.24), rgba(10,200,185,0.11));
+      border: 1px solid rgba(10,200,185,0.34);
+    }
+
+    .btn-ghost {
+      color: var(--muted);
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .notice {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(200,170,110,0.08);
+      border: 1px solid rgba(200,170,110,0.18);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .notice strong { color: var(--gold-2); }
+
+    .result { min-height: 620px; overflow: hidden; }
+
+    .loading, .error, .empty {
+      min-height: 620px;
+      display: grid;
+      place-items: center;
+      padding: 26px;
+      text-align: center;
+    }
+
+    .loading-inner, .error-inner, .empty-inner {
+      max-width: 560px;
+      margin: auto;
+    }
+
+    .spinner {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.08);
+      border-top-color: var(--gold);
+      margin: 0 auto 18px;
+      animation: spin 0.85s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error h2 { color: var(--danger); }
+    .error p, .empty p, .loading p { color: var(--muted); line-height: 1.55; }
+
+    .result-content { padding: 22px; }
+
+    .top-result {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .champ-card {
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(200,170,110,0.28);
+      background: linear-gradient(180deg, rgba(200,170,110,0.12), rgba(0,0,0,0.22));
+      min-height: 304px;
+    }
+
+    .champ-img-wrap {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background: rgba(0,0,0,0.24);
+      overflow: hidden;
+    }
+
+    .champ-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transform: scale(1.04);
+    }
+
+    .lane-badge {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.65);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: var(--gold-2);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .champ-info { padding: 16px; }
+    .champ-info h2 { margin: 0 0 4px; font-size: 26px; }
+    .champ-info p { margin: 0; color: var(--muted); font-size: 14px; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-card, .challenge-card, .build-card, .history-item {
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.044);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .mini-card small, .challenge-card small, .build-card small {
+      display: block;
+      color: var(--blue);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 11px;
+      margin-bottom: 7px;
+    }
+
+    .mini-card strong {
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .challenge-card {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, rgba(10,200,185,0.11), rgba(200,170,110,0.08));
+    }
+
+    .challenge-card p { margin: 0; color: var(--text); line-height: 1.5; }
+
+    .rolling {
+      animation: pulseRoll 0.12s linear infinite alternate;
+      filter: saturate(1.2);
+    }
+
+    @keyframes pulseRoll {
+      from { transform: scale(0.995); opacity: 0.82; }
+      to { transform: scale(1.006); opacity: 1; }
+    }
+
+    .build-card { margin-top: 18px; }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .item {
+      border-radius: 16px;
+      border: 1px solid rgba(200,170,110,0.18);
+      background: rgba(0,0,0,0.22);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .item img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      display: block;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .item-body {
+      padding: 9px;
+    }
+
+    .item-name {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 36px;
+      font-size: 12px;
+      line-height: 1.35;
+      font-weight: 800;
+    }
+
+    .item-meta {
+      margin-top: 7px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .history {
+      margin-top: 24px;
+      padding: 18px;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .history-item img {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1px solid rgba(200,170,110,0.24);
+    }
+
+    .history-item strong { display: block; }
+    .history-item span { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: min(420px, calc(100% - 36px));
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(10,200,185,0.34);
+      background: rgba(4, 14, 26, 0.94);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+      z-index: 20;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 980px) {
+      header, .panel, .top-result { grid-template-columns: 1fr; }
+      .controls { position: static; }
+      .items-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .app { width: min(100% - 22px, 1180px); padding-top: 18px; }
+      .hero, .status-card, .controls, .result-content, .history { padding: 16px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .btn-row { grid-template-columns: 1fr; }
+      .items-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .loading, .error, .empty { min-height: 520px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <section class="hero">
+        <span class="eyebrow">⚔️ roleta local para jogar com os amigos</span>
+        <h1>Roleta do Rift</h1>
+        <p class="subtitle">Role sua lane, campeão e build para jogar com os amigos. Build divertida e coerente, não necessariamente meta.</p>
+      </section>
+
+      <aside class="status-card">
+        <div class="status-row"><span>Status</span><strong id="dataStatus">Carregando...</strong></div>
+        <div class="status-row"><span>Data Dragon</span><strong id="versionStatus">--</strong></div>
+        <div class="status-row"><span>Campeões</span><strong id="champStatus">--</strong></div>
+        <div class="status-row"><span>Itens filtrados</span><strong id="itemStatus">--</strong></div>
+      </aside>
+    </header>
+
+    <main class="panel">
+      <aside class="controls">
+        <div class="section-title">
+          <h2>Controle da roleta</h2>
+          <span class="pill">sem instalação</span>
+        </div>
+
+        <label for="difficultySelect">Dificuldade</label>
+        <select id="difficultySelect">
+          <option value="normal">Normal — campeão coerente com a lane</option>
+          <option value="chaos">Caos controlado — qualquer campeão, build coerente</option>
+          <option value="troll">Troll do bem — estranho, mas jogável</option>
+        </select>
+
+        <label>Travas</label>
+        <div class="lock-grid">
+          <label class="checkline"><input type="checkbox" id="lockLane" /> <span>Travar lane selecionada</span></label>
+          <select id="laneSelect">
+            <option value="TOP">TOP</option>
+            <option value="JUNGLE">JUNGLE</option>
+            <option value="MID">MID</option>
+            <option value="ADC">ADC</option>
+            <option value="SUPORTE">SUPORTE</option>
+          </select>
+
+          <label class="checkline"><input type="checkbox" id="lockChampion" /> <span>Travar campeão selecionado</span></label>
+          <select id="championSelect" disabled>
+            <option>Carregando campeões...</option>
+          </select>
+
+          <label class="checkline"><input type="checkbox" id="lockBuild" /> <span>Travar build atual</span></label>
+        </div>
+
+        <button id="rollButton" class="btn btn-primary" disabled>ROLETAR</button>
+        <div class="btn-row">
+          <button id="copyButton" class="btn btn-secondary" disabled>Copiar resultado</button>
+          <button id="rerollButton" class="btn btn-ghost" disabled>Roletar novamente</button>
+        </div>
+        <div class="btn-row">
+          <button id="clearHistoryButton" class="btn btn-ghost">Limpar histórico</button>
+          <button id="resetLocksButton" class="btn btn-ghost">Soltar travas</button>
+        </div>
+
+        <div class="notice">
+          <strong>Nota honesta:</strong> a lógica usa Data Dragon + regras internas. A build busca ser jogável e temática, não uma recomendação competitiva/pro player.
+        </div>
+      </aside>
+
+      <section>
+        <div id="result" class="result">
+          <div class="loading">
+            <div class="loading-inner">
+              <div class="spinner"></div>
+              <h2>Buscando dados do Data Dragon...</h2>
+              <p>O app carrega campeões e itens públicos da Riot. Se sua internet bloquear o acesso, ele mostra um erro amigável.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="history">
+          <div class="section-title">
+            <h3>Histórico dos últimos 5</h3>
+            <span class="pill" id="historyCount">0 resultados</span>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const DDRAGON_BASE = "https://ddragon.leagueoflegends.com";
+    const LANES = ["TOP", "JUNGLE", "MID", "ADC", "SUPORTE"];
+
+    const state = {
+      version: null,
+      champions: [],
+      items: [],
+      lastResult: null,
+      history: [],
+      isRolling: false,
+    };
+
+    const els = {
+      dataStatus: document.getElementById("dataStatus"),
+      versionStatus: document.getElementById("versionStatus"),
+      champStatus: document.getElementById("champStatus"),
+      itemStatus: document.getElementById("itemStatus"),
+      difficultySelect: document.getElementById("difficultySelect"),
+      lockLane: document.getElementById("lockLane"),
+      lockChampion: document.getElementById("lockChampion"),
+      lockBuild: document.getElementById("lockBuild"),
+      laneSelect: document.getElementById("laneSelect"),
+      championSelect: document.getElementById("championSelect"),
+      rollButton: document.getElementById("rollButton"),
+      copyButton: document.getElementById("copyButton"),
+      rerollButton: document.getElementById("rerollButton"),
+      clearHistoryButton: document.getElementById("clearHistoryButton"),
+      resetLocksButton: document.getElementById("resetLocksButton"),
+      result: document.getElementById("result"),
+      historyList: document.getElementById("historyList"),
+      historyCount: document.getElementById("historyCount"),
+      toast: document.getElementById("toast"),
+    };
+
+    const manualLaneMap = {
+      Aatrox: ["TOP"], Ahri: ["MID"], Akali: ["MID", "TOP"], Akshan: ["MID", "TOP", "ADC"], Alistar: ["SUPORTE"],
+      Ambessa: ["TOP", "JUNGLE"], Amumu: ["JUNGLE", "SUPORTE"], Anivia: ["MID"], Annie: ["MID", "SUPORTE"], Aphelios: ["ADC"],
+      Ashe: ["ADC", "SUPORTE"], AurelionSol: ["MID"], Aurora: ["MID", "TOP"], Azir: ["MID"], Bard: ["SUPORTE"],
+      Belveth: ["JUNGLE"], Blitzcrank: ["SUPORTE"], Brand: ["MID", "SUPORTE", "JUNGLE"], Braum: ["SUPORTE"], Briar: ["JUNGLE"],
+      Caitlyn: ["ADC"], Camille: ["TOP", "SUPORTE"], Cassiopeia: ["MID", "TOP"], Chogath: ["TOP", "MID"], Corki: ["MID", "ADC"],
+      Darius: ["TOP"], Diana: ["JUNGLE", "MID"], Draven: ["ADC"], DrMundo: ["TOP", "JUNGLE"], Ekko: ["MID", "JUNGLE"],
+      Elise: ["JUNGLE"], Evelynn: ["JUNGLE"], Ezreal: ["ADC"], Fiddlesticks: ["JUNGLE", "SUPORTE"], Fiora: ["TOP"],
+      Fizz: ["MID"], Galio: ["MID", "SUPORTE"], Gangplank: ["TOP"], Garen: ["TOP"], Gnar: ["TOP"],
+      Gragas: ["TOP", "JUNGLE", "MID", "SUPORTE"], Graves: ["JUNGLE"], Gwen: ["TOP", "JUNGLE"], Hecarim: ["JUNGLE"], Heimerdinger: ["MID", "SUPORTE", "TOP"],
+      Hwei: ["MID", "SUPORTE"], Illaoi: ["TOP"], Irelia: ["TOP", "MID"], Ivern: ["JUNGLE", "SUPORTE"], Janna: ["SUPORTE"],
+      JarvanIV: ["JUNGLE", "TOP"], Jax: ["TOP", "JUNGLE"], Jayce: ["TOP", "MID"], Jhin: ["ADC"], Jinx: ["ADC"],
+      Kaisa: ["ADC"], Kalista: ["ADC"], Karma: ["SUPORTE", "MID", "TOP"], Karthus: ["JUNGLE", "MID", "ADC"], Kassadin: ["MID"],
+      Katarina: ["MID"], Kayle: ["TOP", "MID"], Kayn: ["JUNGLE"], Kennen: ["TOP", "MID"], Khazix: ["JUNGLE"],
+      Kindred: ["JUNGLE"], Kled: ["TOP"], KogMaw: ["ADC"], KSante: ["TOP"], Leblanc: ["MID"],
+      LeeSin: ["JUNGLE", "TOP"], Leona: ["SUPORTE"], Lillia: ["JUNGLE", "TOP"], Lissandra: ["MID"], Lucian: ["ADC", "MID"],
+      Lulu: ["SUPORTE"], Lux: ["MID", "SUPORTE"], Malphite: ["TOP", "SUPORTE"], Malzahar: ["MID"], Maokai: ["JUNGLE", "TOP", "SUPORTE"],
+      MasterYi: ["JUNGLE"], Milio: ["SUPORTE"], MissFortune: ["ADC"], MonkeyKing: ["TOP", "JUNGLE"], Mordekaiser: ["TOP", "JUNGLE"],
+      Morgana: ["SUPORTE", "MID", "JUNGLE"], Naafiri: ["MID", "TOP"], Nami: ["SUPORTE"], Nasus: ["TOP"], Nautilus: ["SUPORTE", "JUNGLE"],
+      Neeko: ["MID", "SUPORTE"], Nidalee: ["JUNGLE"], Nilah: ["ADC"], Nocturne: ["JUNGLE", "MID"], Nunu: ["JUNGLE"],
+      Olaf: ["TOP", "JUNGLE"], Orianna: ["MID"], Ornn: ["TOP"], Pantheon: ["TOP", "MID", "SUPORTE", "JUNGLE"], Poppy: ["TOP", "JUNGLE", "SUPORTE"],
+      Pyke: ["SUPORTE"], Qiyana: ["MID", "JUNGLE"], Quinn: ["TOP"], Rakan: ["SUPORTE"], Rammus: ["JUNGLE"],
+      RekSai: ["JUNGLE"], Rell: ["SUPORTE", "JUNGLE"], Renata: ["SUPORTE"], Renekton: ["TOP", "MID"], Rengar: ["JUNGLE", "TOP"],
+      Riven: ["TOP"], Rumble: ["TOP", "MID", "JUNGLE"], Ryze: ["MID", "TOP"], Samira: ["ADC"], Sejuani: ["JUNGLE", "TOP"],
+      Senna: ["SUPORTE", "ADC"], Seraphine: ["SUPORTE", "MID", "ADC"], Sett: ["TOP", "SUPORTE"], Shaco: ["JUNGLE", "SUPORTE"], Shen: ["TOP", "SUPORTE"],
+      Shyvana: ["JUNGLE", "TOP"], Singed: ["TOP", "MID"], Sion: ["TOP"], Sivir: ["ADC"], Skarner: ["JUNGLE", "TOP"],
+      Smolder: ["ADC", "MID"], Sona: ["SUPORTE"], Soraka: ["SUPORTE"], Swain: ["MID", "SUPORTE", "ADC"], Sylas: ["MID", "TOP", "JUNGLE"],
+      Syndra: ["MID"], TahmKench: ["SUPORTE", "TOP"], Taliyah: ["MID", "JUNGLE"], Talon: ["MID", "JUNGLE"], Taric: ["SUPORTE"],
+      Teemo: ["TOP", "JUNGLE", "SUPORTE"], Thresh: ["SUPORTE"], Tristana: ["ADC", "MID"], Trundle: ["TOP", "JUNGLE"], Tryndamere: ["TOP", "MID"],
+      TwistedFate: ["MID", "ADC"], Twitch: ["ADC", "JUNGLE", "SUPORTE"], Udyr: ["JUNGLE", "TOP"], Urgot: ["TOP"], Varus: ["ADC"],
+      Vayne: ["ADC", "TOP"], Veigar: ["MID", "ADC", "SUPORTE"], Velkoz: ["MID", "SUPORTE"], Vex: ["MID"], Vi: ["JUNGLE"],
+      Viego: ["JUNGLE"], Viktor: ["MID", "TOP"], Vladimir: ["MID", "TOP"], Volibear: ["TOP", "JUNGLE"], Warwick: ["JUNGLE", "TOP"],
+      Xayah: ["ADC"], Xerath: ["MID", "SUPORTE"], XinZhao: ["JUNGLE"], Yasuo: ["MID", "TOP", "ADC"], Yone: ["MID", "TOP"],
+      Yorick: ["TOP"], Yuumi: ["SUPORTE"], Zac: ["JUNGLE", "TOP", "SUPORTE"], Zed: ["MID", "JUNGLE"], Zeri: ["ADC"],
+      Ziggs: ["MID", "ADC"], Zilean: ["SUPORTE", "MID"], Zoe: ["MID"], Zyra: ["SUPORTE", "MID", "JUNGLE"]
+    };
+
+    const manualProfiles = {
+      Yasuo: "crit-ad", Yone: "crit-ad", Tryndamere: "crit-ad", Vayne: "adc", Jinx: "adc", Caitlyn: "adc", Ashe: "adc", Ezreal: "adc",
+      Zed: "assassin-ad", Talon: "assassin-ad", Qiyana: "assassin-ad", Naafiri: "assassin-ad", Khazix: "assassin-ad", Rengar: "assassin-ad", Pyke: "assassin-ad",
+      Lux: "mage", Ahri: "mage", Syndra: "mage", Veigar: "mage", Hwei: "mage", Orianna: "mage", Xerath: "mage", Velkoz: "mage", Brand: "mage",
+      Leona: "support-tank", Nautilus: "support-tank", Thresh: "support-tank", Alistar: "support-tank", Braum: "support-tank", Rell: "support-tank", Rakan: "support-tank", Blitzcrank: "support-tank",
+      Lulu: "support-enchanter", Janna: "support-enchanter", Soraka: "support-enchanter", Nami: "support-enchanter", Milio: "support-enchanter", Yuumi: "support-enchanter", Sona: "support-enchanter", Renata: "support-enchanter",
+      Malphite: "tank", Ornn: "tank", Sion: "tank", Rammus: "tank", Sejuani: "tank", Zac: "tank", Shen: "tank", DrMundo: "tank",
+      LeeSin: "fighter", JarvanIV: "fighter", Vi: "fighter", Nocturne: "fighter", XinZhao: "fighter", Viego: "fighter", Hecarim: "fighter", Warwick: "fighter",
+      Mordekaiser: "ap-bruiser", Gwen: "ap-bruiser", Diana: "ap-bruiser", Lillia: "ap-bruiser", Sylas: "ap-bruiser", Ekko: "ap-assassin",
+      Teemo: "mage", Kaisa: "adc", Corki: "adc", TwistedFate: "mage", Senna: "adc", Nilah: "adc", Smolder: "adc", KogMaw: "adc"
+    };
+
+    const challenges = [
+      "Você só pode dar engage se pingar antes.",
+      "Toda kill precisa ser comemorada no chat com uma frase curta e educada.",
+      "Você precisa comprar uma pink ward sempre que voltar base e tiver espaço.",
+      "Se morrer 3 vezes, jogue 5 minutos full safe.",
+      "Só pode trocar um item planejado se explicar o motivo para o time.",
+      "Tente fazer um roam antes dos 10 minutos.",
+      "Você precisa proteger o colega mais feedado como se fosse o presidente do Rift.",
+      "Você não pode culpar o jungle. Nem de brincadeira. Hoje ele está imune.",
+      "A cada objetivo feito, mande um 'boa, tropa' no chat.",
+      "Você precisa avisar quando gastar Flash, mesmo se ninguém perguntar.",
+      "Antes do primeiro dragão, coloque visão no rio pelo menos uma vez.",
+      "Escolha um aliado e seja o guarda-costas oficial dele por 3 minutos.",
+      "Se pegar abate solo, diga apenas: 'foi calculado'.",
+      "Você precisa fazer pelo menos uma jogada usando arbusto como se fosse gênio tático.",
+      "Antes de lutar, conte mentalmente até 2. O botão de ir igual maluco está bloqueado.",
+      "Você deve elogiar uma boa jogada de alguém do time.",
+      "Não pode digitar nada tóxico, nem indireta gourmet.",
+      "Toda vez que voltar base, olhe o minimapa antes de sair andando.",
+      "Você precisa salvar um aliado pelo menos uma vez, mesmo que seja só com pressão moral.",
+      "Se perder uma cannon, respire fundo e finja que era parte do plano.",
+      "Você precisa ajudar em pelo menos dois objetivos neutros.",
+      "Faça uma call objetiva antes de uma luta: drag, baron, torre ou recuar.",
+      "Durante 5 minutos, jogue como se estivesse sendo analisado por um coach coreano.",
+      "Se ganhar a lane, ajude outra lane antes de ficar farmando ego.",
+      "Se perder a lane, sua missão é não afundar mais o barco.",
+      "Você precisa usar pelo menos um emote depois de sobreviver com pouca vida.",
+      "A primeira jogada arriscada do jogo precisa ser narrada em voz alta para os amigos.",
+      "Se alguém do time errar, você só pode responder com: 'acontece'.",
+      "Você precisa pingar objetivo 20 segundos antes de nascer.",
+      "No fim da partida, dê honra para alguém que realmente tentou jogar junto.",
+      "Se estiver de suporte, sua missão secreta é fazer o ADC se sentir protagonista.",
+      "Se estiver jungle, gank no amigo que mais reclamar está proibido por 7 minutos.",
+      "Se estiver top, você precisa lembrar que existe mapa antes dos 14 minutos.",
+      "Se estiver mid, tente sumir da visão inimiga pelo menos uma vez antes de roamar.",
+      "Se estiver ADC, sobreviver vale mais que dar hit bonito e morrer triste."
+    ];
+
+    function normalizeText(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    }
+
+    function randomFrom(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function shuffle(list) {
+      const copy = [...list];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => els.toast.classList.remove("show"), 2600);
+    }
+
+    async function loadDataDragon() {
+      try {
+        setStatus("Carregando...", "--", "--", "--");
+        const versionsRes = await fetch(`${DDRAGON_BASE}/api/versions.json`);
+        if (!versionsRes.ok) throw new Error("Não foi possível buscar versões do Data Dragon.");
+        const versions = await versionsRes.json();
+        const version = versions[0];
+
+        const [championRes, itemRes] = await Promise.all([
+          fetch(`${DDRAGON_BASE}/cdn/${version}/data/pt_BR/champion.json`),
+          fetch(`${DDRAGON_BASE}/cdn/${version}/data/pt_BR/item.json`),
+        ]);
+
+        if (!championRes.ok || !itemRes.ok) throw new Error("Não foi possível carregar campeões ou itens em pt_BR.");
+
+        const championJson = await championRes.json();
+        const itemJson = await itemRes.json();
+
+        state.version = version;
+        state.champions = Object.values(championJson.data).map(champ => ({
+          ...champ,
+          imageUrl: `${DDRAGON_BASE}/cdn/${version}/img/champion/${champ.image.full}`,
+          lanes: classifyChampionLanes(champ),
+          profile: classifyChampion(champ),
+        })).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+        state.items = Object.entries(itemJson.data).map(([id, item]) => ({
+          id,
+          ...item,
+          cleanDescription: normalizeText(`${item.name} ${item.plaintext || ""} ${item.description || ""}`),
+          imageUrl: `${DDRAGON_BASE}/cdn/${version}/img/item/${item.image?.full || `${id}.png`}`,
+        })).filter(isValidItem);
+
+        populateChampionSelect();
+        setStatus("Pronto", version, state.champions.length, state.items.length);
+        enableApp(true);
+        renderEmptyState();
+      } catch (error) {
+        console.error(error);
+        setStatus("Erro", "--", "--", "--");
+        enableApp(false);
+        renderError(error);
+      }
+    }
+
+    function setStatus(data, version, champs, items) {
+      els.dataStatus.textContent = data;
+      els.versionStatus.textContent = version;
+      els.champStatus.textContent = champs;
+      els.itemStatus.textContent = items;
+    }
+
+    function enableApp(enabled) {
+      els.rollButton.disabled = !enabled;
+      els.rerollButton.disabled = !enabled;
+      els.championSelect.disabled = !enabled;
+    }
+
+    function populateChampionSelect() {
+      els.championSelect.innerHTML = state.champions.map(champ => (
+        `<option value="${champ.id}">${champ.name}</option>`
+      )).join("");
+    }
+
+    function classifyChampionLanes(champ) {
+      if (manualLaneMap[champ.id]) return manualLaneMap[champ.id];
+
+      const tags = champ.tags || [];
+      const lanes = new Set();
+
+      if (tags.includes("Marksman")) lanes.add("ADC");
+      if (tags.includes("Mage")) { lanes.add("MID"); lanes.add("SUPORTE"); }
+      if (tags.includes("Assassin")) { lanes.add("MID"); lanes.add("JUNGLE"); }
+      if (tags.includes("Fighter")) { lanes.add("TOP"); lanes.add("JUNGLE"); }
+      if (tags.includes("Tank")) { lanes.add("TOP"); lanes.add("JUNGLE"); lanes.add("SUPORTE"); }
+      if (tags.includes("Support")) lanes.add("SUPORTE");
+
+      if (!lanes.size) lanes.add("MID");
+      return Array.from(lanes);
+    }
+
+    function classifyChampion(champ) {
+      if (manualProfiles[champ.id]) return manualProfiles[champ.id];
+
+      const tags = champ.tags || [];
+      const lanes = manualLaneMap[champ.id] || [];
+
+      if (tags.includes("Support") && tags.includes("Mage")) return "support-enchanter";
+      if (tags.includes("Support") && tags.includes("Tank")) return "support-tank";
+      if (tags.includes("Marksman")) return "adc";
+      if (tags.includes("Assassin") && tags.includes("Mage")) return "ap-assassin";
+      if (tags.includes("Assassin")) return "assassin-ad";
+      if (tags.includes("Mage")) return lanes.includes("SUPORTE") ? "mage" : "mage";
+      if (tags.includes("Tank") && tags.includes("Fighter")) return "fighter";
+      if (tags.includes("Tank")) return "tank";
+      if (tags.includes("Fighter")) return "fighter";
+      return "fighter";
+    }
+
+    function getLanePool(lane) {
+      const pool = state.champions.filter(champ => champ.lanes.includes(lane));
+      return pool.length ? pool : state.champions;
+    }
+
+    function rollLane() {
+      return els.lockLane.checked ? els.laneSelect.value : randomFrom(LANES);
+    }
+
+    function rollChampion(lane, difficulty) {
+      if (els.lockChampion.checked) {
+        const selected = state.champions.find(champ => champ.id === els.championSelect.value);
+        if (selected) return selected;
+      }
+
+      if (difficulty === "chaos") return randomFrom(state.champions);
+
+      if (difficulty === "troll") {
+        const weirdPool = state.champions.filter(champ => !champ.lanes.includes(lane));
+        return randomFrom(weirdPool.length ? weirdPool : state.champions);
+      }
+
+      return randomFrom(getLanePool(lane));
+    }
+
+    function isValidItem(item) {
+      const tags = item.tags || [];
+      const name = normalizeText(item.name);
+      const text = normalizeText(`${item.name} ${item.plaintext || ""} ${item.description || ""}`);
+      const gold = item.gold || {};
+
+      if (!gold.purchasable) return false;
+      if (!item.maps || item.maps["11"] !== true) return false;
+      if (item.requiredChampion || item.requiredAlly) return false;
+      if (item.inStore === false) return false;
+      if (item.consumed || item.consumeOnFull) return false;
+      if ((gold.total || 0) < 300) return false;
+      if (tags.includes("Consumable") || tags.includes("Trinket")) return false;
+      if (/pocao|elixir|sentinela|ward|amuleto|trinket|poro|biscoito|oraculo/.test(name)) return false;
+      if (/consumir|ativo exclusivo de arena|arena|aram/.test(text)) return false;
+
+      return true;
+    }
+
+    function isBoots(item) {
+      const tags = item.tags || [];
+      const name = normalizeText(item.name);
+      return tags.includes("Boots") || /botas|grevas|passos|calcados/.test(name);
+    }
+
+    function isLikelyFinalCore(item) {
+      const total = item.gold?.total || 0;
+      const tags = item.tags || [];
+      if (isBoots(item)) return false;
+      if (total < 1800) return false;
+      if (item.into && item.into.length) return false;
+      if (tags.includes("Jungle") && total < 1800) return false;
+      return true;
+    }
+
+    function itemStat(item, key) {
+      return Number(item.stats?.[key] || 0);
+    }
+
+    function hasAny(text, words) {
+      return words.some(word => text.includes(word));
+    }
+
+    function scoreItem(item, profile, lane) {
+      const text = item.cleanDescription;
+      const tags = item.tags || [];
+      const total = item.gold?.total || 0;
+      let score = Math.min(total / 700, 6);
+
+      const ad = itemStat(item, "FlatPhysicalDamageMod");
+      const ap = itemStat(item, "FlatMagicDamageMod");
+      const hp = itemStat(item, "FlatHPPoolMod");
+      const armor = itemStat(item, "FlatArmorMod");
+      const mr = itemStat(item, "FlatSpellBlockMod");
+      const as = itemStat(item, "PercentAttackSpeedMod");
+      const crit = itemStat(item, "FlatCritChanceMod") || itemStat(item, "PercentCritChanceMod");
+      const mana = itemStat(item, "FlatMPPoolMod");
+      const move = itemStat(item, "FlatMovementSpeedMod") || itemStat(item, "PercentMovementSpeedMod");
+
+      const weights = {
+        "adc": { ad: 4.4, as: 35, crit: 40, ap: -2.2, hp: 0.002, armor: 0.01, mr: 0.01, mana: 0.002 },
+        "crit-ad": { ad: 4.2, as: 30, crit: 48, ap: -2.6, hp: 0.002, armor: 0.01, mr: 0.01, mana: 0 },
+        "mage": { ap: 4.8, mana: 0.012, ad: -2.8, hp: 0.006, armor: 0.01, mr: 0.01, as: -8, crit: -18 },
+        "ap-assassin": { ap: 5, mana: 0.004, move: 0.06, ad: -2.4, hp: 0.005, as: -8, crit: -20 },
+        "ap-bruiser": { ap: 4.1, hp: 0.018, armor: 0.09, mr: 0.11, mana: 0.004, ad: -1.4, as: 4, crit: -20 },
+        "assassin-ad": { ad: 5, as: 4, crit: -10, ap: -3, hp: 0.003, armor: 0.02, mr: 0.02, mana: 0 },
+        "fighter": { ad: 4, hp: 0.016, armor: 0.08, mr: 0.08, as: 8, crit: -8, ap: -2, mana: 0.002 },
+        "tank": { hp: 0.035, armor: 0.22, mr: 0.22, ad: 0.7, ap: 0.4, as: -4, crit: -20, mana: 0.003 },
+        "support-enchanter": { ap: 3.4, mana: 0.014, hp: 0.01, armor: 0.07, mr: 0.07, ad: -2.4, as: -8, crit: -20 },
+        "support-tank": { hp: 0.03, armor: 0.2, mr: 0.2, ap: 0.4, ad: 0.4, mana: 0.004, as: -4, crit: -20 },
+      }[profile] || { ad: 2, ap: 2, hp: 0.01, armor: 0.05, mr: 0.05, as: 2, crit: 0, mana: 0.002 };
+
+      score += ad * (weights.ad || 0);
+      score += ap * (weights.ap || 0);
+      score += hp * (weights.hp || 0);
+      score += armor * (weights.armor || 0);
+      score += mr * (weights.mr || 0);
+      score += as * (weights.as || 0);
+      score += crit * (weights.crit || 0);
+      score += mana * (weights.mana || 0);
+      score += move * (weights.move || 0);
+
+      if (tags.includes("Damage")) score += ["adc", "crit-ad", "assassin-ad", "fighter"].includes(profile) ? 8 : 0;
+      if (tags.includes("AttackSpeed")) score += ["adc", "crit-ad"].includes(profile) ? 12 : 0;
+      if (tags.includes("CriticalStrike")) score += ["adc", "crit-ad"].includes(profile) ? 18 : -16;
+      if (tags.includes("SpellDamage")) score += ["mage", "ap-assassin", "ap-bruiser", "support-enchanter"].includes(profile) ? 12 : -12;
+      if (tags.includes("Health")) score += ["tank", "fighter", "ap-bruiser", "support-tank"].includes(profile) ? 10 : 0;
+      if (tags.includes("Armor") || tags.includes("SpellBlock")) score += ["tank", "support-tank", "fighter"].includes(profile) ? 10 : 2;
+      if (tags.includes("CooldownReduction")) score += 8;
+      if (tags.includes("Mana")) score += ["mage", "support-enchanter"].includes(profile) ? 8 : 1;
+      if (tags.includes("LifeSteal")) score += ["adc", "crit-ad", "fighter"].includes(profile) ? 10 : 0;
+
+      if (hasAny(text, ["letalidade", "penetracao de armadura", "armadura adicional"])) score += profile === "assassin-ad" ? 22 : profile === "fighter" ? 6 : -10;
+      if (hasAny(text, ["poder de habilidade", "penetracao magica", "dano magico"])) score += ["mage", "ap-assassin", "ap-bruiser", "support-enchanter"].includes(profile) ? 14 : -10;
+      if (hasAny(text, ["aceleracao de habilidade", "habilidade acelerada"])) score += 10;
+      if (hasAny(text, ["cura", "escudo", "cura e escudo", "aliado", "aliados"])) score += profile === "support-enchanter" ? 24 : profile === "support-tank" ? 6 : -4;
+      if (hasAny(text, ["tenacidade", "resistencia a lentidao", "armadura", "resistencia magica"])) score += ["tank", "support-tank", "fighter"].includes(profile) ? 12 : 2;
+      if (hasAny(text, ["roubo de vida", "vampirismo", "dano fisico"] )) score += ["adc", "crit-ad", "fighter", "assassin-ad"].includes(profile) ? 10 : -3;
+      if (hasAny(text, ["controle de grupo", "imobiliza", "lentidao", "provocacao"])) score += ["tank", "support-tank"].includes(profile) ? 7 : 2;
+
+      if (lane === "SUPORTE" && hasAny(text, ["suporte", "aliado", "sentinela" ])) score += 8;
+      if (lane === "ADC" && ["adc", "crit-ad"].includes(profile)) score += 8;
+      if (lane === "JUNGLE" && profile === "fighter") score += 4;
+
+      return score + Math.random() * 4;
+    }
+
+    function chooseBoots(profile) {
+      const boots = state.items.filter(item => isBoots(item) && (item.gold?.total || 0) >= 900);
+      if (!boots.length) return null;
+
+      const scored = boots.map(item => {
+        const text = item.cleanDescription;
+        let score = item.gold?.total || 0;
+
+        if (["adc", "crit-ad"].includes(profile) && hasAny(text, ["velocidade de ataque", "grevas"])) score += 4000;
+        if (["mage", "ap-assassin", "support-enchanter"].includes(profile) && hasAny(text, ["penetracao magica", "feiticeiro"])) score += 3800;
+        if (["assassin-ad", "fighter"].includes(profile) && hasAny(text, ["aceleracao de habilidade", "lucidez"])) score += 3000;
+        if (["tank", "support-tank"].includes(profile) && hasAny(text, ["armadura", "aco", "mercurio", "tenacidade", "resistencia magica"])) score += 3500;
+        if (hasAny(text, ["mobilidade", "sincronizadas"])) score -= 900;
+
+        return { item, score: score + Math.random() * 600 };
+      }).sort((a, b) => b.score - a.score);
+
+      return scored[0].item;
+    }
+
+    function buildItemsForChampion(champ, lane) {
+      if (els.lockBuild.checked && state.lastResult?.build?.length === 6) {
+        return state.lastResult.build;
+      }
+
+      const profile = champ.profile || classifyChampion(champ);
+      const boots = chooseBoots(profile);
+
+      let candidates = state.items
+        .filter(isLikelyFinalCore)
+        .filter(item => !isBoots(item));
+
+      const scored = candidates
+        .map(item => ({ item, score: scoreItem(item, profile, lane) }))
+        .filter(entry => Number.isFinite(entry.score))
+        .sort((a, b) => b.score - a.score);
+
+      const selected = [];
+      const usedIds = new Set();
+      const usedNames = new Set();
+
+      function addItem(item) {
+        if (!item || usedIds.has(item.id) || usedNames.has(normalizeText(item.name))) return false;
+        usedIds.add(item.id);
+        usedNames.add(normalizeText(item.name));
+        selected.push(item);
+        return true;
+      }
+
+      if (boots) addItem(boots);
+
+      const topSlice = scored.slice(0, 22);
+      while (selected.length < 6 && topSlice.length) {
+        const pickIndex = Math.floor(Math.random() * Math.min(8, topSlice.length));
+        const [entry] = topSlice.splice(pickIndex, 1);
+        addItem(entry.item);
+      }
+
+      for (const entry of scored) {
+        if (selected.length >= 6) break;
+        addItem(entry.item);
+      }
+
+      if (selected.length < 6) {
+        const fallback = shuffle(state.items.filter(item => !isBoots(item) && (item.gold?.total || 0) >= 1600));
+        for (const item of fallback) {
+          if (selected.length >= 6) break;
+          addItem(item);
+        }
+      }
+
+      return selected.slice(0, 6);
+    }
+
+    function getSummonerSpells(lane) {
+      const map = {
+        TOP: [["Flash", "Teleporte"], ["Flash", "Ignite"]],
+        JUNGLE: [["Flash", "Smite"]],
+        MID: [["Flash", "Ignite"], ["Flash", "Teleporte"], ["Flash", "Cleanse"]],
+        ADC: [["Flash", "Heal"], ["Flash", "Cleanse"], ["Flash", "Barrier"]],
+        SUPORTE: [["Flash", "Ignite"], ["Flash", "Exhaust"], ["Flash", "Heal"]],
+      };
+      return randomFrom(map[lane] || map.MID);
+    }
+
+    function rollChallenge() {
+      return randomFrom(challenges);
+    }
+
+    function createResult({ transient = false } = {}) {
+      const lane = rollLane();
+      const difficulty = els.difficultySelect.value;
+      const champ = rollChampion(lane, difficulty);
+      const build = buildItemsForChampion(champ, lane);
+      const spells = getSummonerSpells(lane);
+      const challenge = rollChallenge();
+      return {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        lane,
+        difficulty,
+        champion: champ,
+        profile: champ.profile,
+        build,
+        spells,
+        challenge,
+        transient,
+        createdAt: new Date(),
+      };
+    }
+
+    async function roll() {
+      if (state.isRolling || !state.champions.length) return;
+      state.isRolling = true;
+      els.rollButton.disabled = true;
+      els.rerollButton.disabled = true;
+
+      const frames = 16;
+      for (let i = 0; i < frames; i++) {
+        const fake = createResult({ transient: true });
+        renderResult(fake, true);
+        await new Promise(resolve => setTimeout(resolve, 58 + i * 9));
+      }
+
+      const finalResult = createResult();
+      state.lastResult = finalResult;
+      renderResult(finalResult, false);
+      saveHistory(finalResult);
+
+      els.copyButton.disabled = false;
+      els.rollButton.disabled = false;
+      els.rerollButton.disabled = false;
+      state.isRolling = false;
+    }
+
+    function renderEmptyState() {
+      els.result.innerHTML = `
+        <div class="empty">
+          <div class="empty-inner">
+            <h2>Pronto para bagunçar o Rift?</h2>
+            <p>Clique em <strong>ROLETAR</strong> para sortear lane, campeão, build, spells e um desafio. Se quiser, trave uma lane ou campeão antes.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderError(error) {
+      els.result.innerHTML = `
+        <div class="error">
+          <div class="error-inner">
+            <h2>Não consegui carregar o Data Dragon 😢</h2>
+            <p>Este app precisa acessar os dados públicos do Riot Data Dragon para carregar campeões, itens e imagens.</p>
+            <p>Verifique sua internet, bloqueio da rede corporativa, firewall ou tente abrir o arquivo em outra conexão.</p>
+            <p><strong>Detalhe técnico:</strong> ${escapeHtml(error.message || "erro desconhecido")}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderResult(result, isRolling = false) {
+      const champ = result.champion;
+      const difficultyLabel = {
+        normal: "Normal",
+        chaos: "Caos controlado",
+        troll: "Troll do bem",
+      }[result.difficulty] || "Normal";
+
+      els.result.innerHTML = `
+        <div class="result-content ${isRolling ? "rolling" : ""}">
+          <div class="top-result">
+            <article class="champ-card">
+              <div class="champ-img-wrap">
+                <img src="${champ.imageUrl}" alt="${escapeHtml(champ.name)}" />
+                <div class="lane-badge">${result.lane}</div>
+              </div>
+              <div class="champ-info">
+                <h2>${escapeHtml(champ.name)}</h2>
+                <p>${escapeHtml(champ.title || "Campeão do Rift")}</p>
+              </div>
+            </article>
+
+            <div class="summary-grid">
+              <div class="mini-card">
+                <small>Lane sorteada</small>
+                <strong>${result.lane}</strong>
+              </div>
+              <div class="mini-card">
+                <small>Dificuldade</small>
+                <strong>${difficultyLabel}</strong>
+              </div>
+              <div class="mini-card">
+                <small>Perfil de build</small>
+                <strong>${formatProfile(result.profile)}</strong>
+              </div>
+              <div class="mini-card">
+                <small>Feitiços</small>
+                <strong>${result.spells.join(" + ")}</strong>
+              </div>
+              <div class="challenge-card">
+                <small>Desafio divertido</small>
+                <p>${escapeHtml(result.challenge)}</p>
+              </div>
+            </div>
+          </div>
+
+          <article class="build-card">
+            <small>Build com 6 itens</small>
+            <div class="items-grid">
+              ${result.build.map(item => renderItem(item)).join("")}
+            </div>
+          </article>
+        </div>
+      `;
+    }
+
+    function renderItem(item) {
+      const price = item.gold?.total ? `${item.gold.total}g` : "--";
+      const type = getItemType(item);
+      return `
+        <div class="item" title="${escapeHtml(item.name)}">
+          <img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" />
+          <div class="item-body">
+            <div class="item-name">${escapeHtml(item.name)}</div>
+            <div class="item-meta"><span>${escapeHtml(type)}</span><span>${price}</span></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function getItemType(item) {
+      if (isBoots(item)) return "Botas";
+      const tags = item.tags || [];
+      if (tags.includes("CriticalStrike")) return "Crítico";
+      if (tags.includes("AttackSpeed")) return "Atk Speed";
+      if (tags.includes("SpellDamage")) return "AP";
+      if (tags.includes("Damage")) return "AD";
+      if (tags.includes("Armor") || tags.includes("SpellBlock") || tags.includes("Health")) return "Defesa";
+      if (tags.includes("Mana")) return "Mana";
+      return "Item";
+    }
+
+    function formatProfile(profile) {
+      const labels = {
+        "adc": "ADC / Marksman",
+        "crit-ad": "Crítico / AD",
+        "mage": "Mage / AP",
+        "ap-assassin": "Assassino AP",
+        "ap-bruiser": "AP Bruiser",
+        "assassin-ad": "Assassino AD",
+        "fighter": "Fighter / Bruiser",
+        "tank": "Tank",
+        "support-enchanter": "Suporte Encantador",
+        "support-tank": "Suporte Tank",
+      };
+      return labels[profile] || "Flexível";
+    }
+
+    function saveHistory(result) {
+      state.history.unshift(result);
+      state.history = state.history.slice(0, 5);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      els.historyCount.textContent = `${state.history.length} resultado${state.history.length === 1 ? "" : "s"}`;
+      if (!state.history.length) {
+        els.historyList.innerHTML = `<p style="color: var(--muted); margin: 0;">Ainda sem histórico. A primeira roletada vai aparecer aqui.</p>`;
+        return;
+      }
+
+      els.historyList.innerHTML = state.history.map(result => `
+        <div class="history-item">
+          <img src="${result.champion.imageUrl}" alt="${escapeHtml(result.champion.name)}" />
+          <div>
+            <strong>${result.lane} — ${escapeHtml(result.champion.name)}</strong>
+            <span>${result.spells.join(" + ")} • ${formatProfile(result.profile)}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function resultToText(result) {
+      if (!result) return "";
+      return [
+        "🎲 Roleta do Rift",
+        `Lane: ${result.lane}`,
+        `Campeão: ${result.champion.name}`,
+        `Perfil: ${formatProfile(result.profile)}`,
+        `Spells: ${result.spells.join(" + ")}`,
+        `Build: ${result.build.map(item => item.name).join(" > ")}`,
+        `Desafio: ${result.challenge}`,
+        "Obs.: build divertida e coerente, não necessariamente meta."
+      ].join("\n");
+    }
+
+    async function copyResult() {
+      if (!state.lastResult) return;
+      const text = resultToText(state.lastResult);
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Resultado copiado! Agora é só colar no Discord/WhatsApp.");
+      } catch (error) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+        showToast("Resultado copiado usando modo compatível.");
+      }
+    }
+
+    function clearHistory() {
+      state.history = [];
+      renderHistory();
+      showToast("Histórico limpo.");
+    }
+
+    function resetLocks() {
+      els.lockLane.checked = false;
+      els.lockChampion.checked = false;
+      els.lockBuild.checked = false;
+      showToast("Travas soltas. A roleta voltou ao caos saudável.");
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    els.rollButton.addEventListener("click", roll);
+    els.rerollButton.addEventListener("click", roll);
+    els.copyButton.addEventListener("click", copyResult);
+    els.clearHistoryButton.addEventListener("click", clearHistory);
+    els.resetLocksButton.addEventListener("click", resetLocks);
+    els.lockChampion.addEventListener("change", () => {
+      if (els.lockChampion.checked && !state.champions.length) showToast("Os campeões ainda estão carregando.");
+    });
+    els.lockBuild.addEventListener("change", () => {
+      if (els.lockBuild.checked && !state.lastResult) showToast("Role uma vez antes para ter uma build atual para travar.");
+    });
+
+    renderHistory();
+    loadDataDragon();
+  </script>
+</body>
+</html>
